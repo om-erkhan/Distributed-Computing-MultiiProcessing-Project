@@ -1,0 +1,881 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parallel Dijkstra Dashboard</title>
+    <!-- Modern Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Theme Configurations */
+        body.theme-blue {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #121824;
+            --bg-card: rgba(18, 24, 36, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-blue: #3182ce;
+            --accent-green: #38a169;
+            --accent-cyan: #00b5d8;
+            --text-main: #f7fafc;
+            --text-muted: #a0aec0;
+            --neon-blue: 0 0 15px rgba(49, 130, 206, 0.8);
+            --neon-cyan: 0 0 15px rgba(0, 181, 216, 0.8);
+            
+            --edge-color: rgba(255, 255, 255, 0.05);
+            --node-color: rgba(49, 130, 206, 0.45);
+            --path-color: #3182ce;
+            --shadow-color: #3182ce;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            --input-bg: rgba(10, 14, 23, 0.8);
+        }
+
+        body.theme-matrix {
+            --bg-primary: #000000;
+            --bg-secondary: #000000;
+            --bg-card: rgba(15, 15, 15, 0.85);
+            --border-color: rgba(255, 255, 255, 0.05);
+            --accent-blue: #e53e3e;
+            --accent-green: #38a169;
+            --accent-cyan: #9b111e;
+            --text-main: #f7fafc;
+            --text-muted: #a0aec0;
+            --neon-blue: 0 0 15px rgba(229, 62, 62, 0.8);
+            --neon-cyan: 0 0 15px rgba(155, 17, 30, 0.8);
+            
+            --edge-color: #000000;
+            --node-color: rgba(139, 0, 0, 0.75);
+            --path-color: #e53e3e;
+            --shadow-color: #e53e3e;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            --input-bg: rgba(10, 10, 10, 0.8);
+        }
+
+        body.theme-light {
+            --bg-primary: #f7fafc;
+            --bg-secondary: #ffffff;
+            --bg-card: #ffffff;
+            --border-color: #e2e8f0;
+            --accent-blue: #3182ce;
+            --accent-green: #38a169;
+            --accent-cyan: #0987a0;
+            --text-main: #1a202c;
+            --text-muted: #718096;
+            --neon-blue: 0 4px 12px rgba(49, 130, 206, 0.2);
+            --neon-cyan: 0 4px 12px rgba(9, 135, 160, 0.2);
+            
+            --edge-color: rgba(0, 0, 0, 0.12);
+            --node-color: rgba(139, 0, 0, 0.75);
+            --path-color: #3182ce;
+            --shadow-color: #3182ce;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+            --input-bg: #ffffff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            overflow-x: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* Header */
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            background: linear-gradient(135deg, #63b3ed 0%, #3182ce 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        header .subtitle {
+            font-size: 12px;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 4px 10px;
+            border-radius: 20px;
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        /* Main Workspace */
+        .workspace {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* Sidebar Control Panel */
+        .sidebar {
+            width: 380px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            overflow-y: auto;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: var(--card-shadow);
+            transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .card h2 {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            border-left: 3px solid var(--accent-blue);
+            padding-left: 8px;
+            color: var(--text-main);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            position: relative;
+        }
+
+        label {
+            display: block;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--input-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-main);
+            font-family: inherit;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background-color 0.3s;
+        }
+
+        select:focus, input:focus {
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 8px rgba(49, 130, 206, 0.3);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, #2b6cb0 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-family: inherit;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(49, 130, 206, 0.4);
+        }
+
+        button:hover {
+            box-shadow: 0 6px 16px rgba(49, 130, 206, 0.6), var(--neon-blue);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        /* Metric Grid */
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .metric-card {
+            background-color: rgba(10, 14, 23, 0.4);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        
+        body.theme-light .metric-card {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .metric-card.full-width {
+            grid-column: span 2;
+        }
+
+        .metric-val {
+            font-size: 20px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-top: 4px;
+            text-shadow: var(--neon-cyan);
+        }
+
+        .metric-val.green {
+            color: #48bb78;
+            text-shadow: 0 0 10px rgba(72, 187, 120, 0.6);
+        }
+
+        .metric-lbl {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* Canvas Map Panel */
+        .map-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+
+        .canvas-container {
+            flex: 1;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.3s, border-color 0.3s, box-shadow 0.3s;
+        }
+        
+        body.theme-light .canvas-container {
+            box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.05);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+
+        canvas:active {
+            cursor: grabbing;
+        }
+
+        .map-controls {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            display: flex;
+            gap: 8px;
+            background-color: rgba(10, 14, 23, 0.7);
+            border: 1px solid var(--border-color);
+            padding: 6px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+        
+        body.theme-light .map-controls {
+            background-color: rgba(255, 255, 255, 0.85);
+        }
+
+        .map-btn {
+            background: none;
+            border: none;
+            color: var(--text-main);
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: none;
+            font-size: 18px;
+        }
+
+        .map-btn:hover {
+            background-color: rgba(255, 255, 255, 0.08);
+            box-shadow: none;
+        }
+        
+        body.theme-light .map-btn:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        /* Bottom History Panel */
+        .history-card {
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+
+        th {
+            text-align: left;
+            padding: 8px 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+            border-bottom: 2px solid var(--border-color);
+            text-transform: uppercase;
+            font-size: 11px;
+            transition: border-color 0.3s;
+        }
+
+        td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-main);
+            transition: border-color 0.3s;
+        }
+
+        tr:hover td {
+            background-color: rgba(255, 255, 255, 0.02);
+        }
+        
+        body.theme-light tr:hover td {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .status-badge {
+            background-color: rgba(49, 130, 206, 0.15);
+            color: var(--accent-blue);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        /* Search input styling */
+        .suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background-color: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 100;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+            transition: background-color 0.3s, border-color 0.3s;
+        }
+
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: background-color 0.1s;
+        }
+
+        .suggestion-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--accent-cyan);
+        }
+        
+        body.theme-light .suggestion-item:hover {
+            background-color: rgba(0, 0, 0, 0.03);
+            color: var(--accent-blue);
+        }
+
+        .info-tip {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body class="theme-blue">
+
+    <header>
+        <div>
+            <h1>Parallel Dijkstra Routing Dashboard</h1>
+        </div>
+        <div class="header-controls">
+            <!-- Theme Selection Selector -->
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <label for="theme-select" style="margin: 0; color: var(--text-muted); font-size: 11px; text-transform: uppercase;">UI Mode:</label>
+                <select id="theme-select" style="width: 160px; padding: 6px 12px; font-size: 12px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-main); height: 32px;">
+                    <option value="blue">Glassmorphic Blue</option>
+                    <option value="matrix">Dark Red Matrix</option>
+                    <option value="light">Minimalist Light</option>
+                </select>
+            </div>
+            <div class="subtitle">SQLite Backend • Multiprocessing Core</div>
+        </div>
+    </header>
+
+    <div class="workspace">
+        <!-- Sidebar Controls -->
+        <div class="sidebar">
+            <!-- Navigation Solver -->
+            <div class="card">
+                <h2>Path Finder</h2>
+                
+                <div class="form-group">
+                    <label for="src-input">Source Node</label>
+                    <input type="text" id="src-input" placeholder="Type ID or Label (e.g. Cebu)..." autocomplete="off">
+                    <div id="src-suggestions" class="suggestions" style="display: none;"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="dst-input">Destination Node</label>
+                    <input type="text" id="dst-input" placeholder="Type ID or Label (e.g. Manila)..." autocomplete="off">
+                    <div id="dst-suggestions" class="suggestions" style="display: none;"></div>
+                </div>
+
+                <button id="solve-btn">Compute Shortest Path</button>
+            </div>
+
+            <!-- Statistics Dashboard -->
+            <div class="card">
+                <h2>Execution Metrics</h2>
+                <div class="metric-grid">
+                    <div class="metric-card">
+                        <div class="metric-lbl">Total Cost</div>
+                        <div id="cost-val" class="metric-val">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-lbl">Hops (Nodes)</div>
+                        <div id="hops-val" class="metric-val">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-lbl">Sequential</div>
+                        <div id="seq-val" class="metric-val">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-lbl">Parallel</div>
+                        <div id="par-val" class="metric-val">-</div>
+                    </div>
+                    <div class="metric-card full-width">
+                        <div class="metric-lbl">Parallel Speedup</div>
+                        <div id="speedup-val" class="metric-val green">-</div>
+                    </div>
+                </div>
+                <div class="info-tip">* Parallel overhead is high for single-query runs due to IPC startup overhead. Use option 3 in Python for the batch speedup report.</div>
+            </div>
+        </div>
+
+        <!-- Canvas and Query Logs -->
+        <div class="map-panel">
+            <div class="canvas-container">
+                <canvas id="graph-canvas"></canvas>
+                <div class="map-controls">
+                    <button id="zoom-in" class="map-btn" title="Zoom In">+</button>
+                    <button id="zoom-out" class="map-btn" title="Zoom Out">-</button>
+                    <button id="reset-map" class="map-btn" title="Recenter">⟲</button>
+                </div>
+            </div>
+            
+            <div class="card history-card" style="margin-top: 20px;">
+                <h2>Recent Query Audits (Logged in SQLite)</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>From</th>
+                            <th>To</th>
+                            <th>Cost</th>
+                            <th>Algorithm</th>
+                            <th>Time (ms)</th>
+                            <th>Computed At</th>
+                        </tr>
+                    </thead>
+                    <tbody id="history-rows">
+                        <!-- Loaded dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripting logic -->
+    <script>
+        // Data Store
+        let nodes = {};
+        let activePath = [];
+        let connections = []; // Random selection of edges to show network background
+
+        // Canvas Zoom / Pan
+        let zoom = 0.8;
+        let offsetX = 50;
+        let offsetY = 50;
+        let isDragging = false;
+        let startDragX, startDragY;
+
+        // Elements
+        const canvas = document.getElementById("graph-canvas");
+        const ctx = canvas.getContext("2d");
+        const solveBtn = document.getElementById("solve-btn");
+        const srcInput = document.getElementById("src-input");
+        const dstInput = document.getElementById("dst-input");
+        const srcSug = document.getElementById("src-suggestions");
+        const dstSug = document.getElementById("dst-suggestions");
+        const themeSelect = document.getElementById("theme-select");
+
+        // Selected Node IDs
+        let selectedSrcId = null;
+        let selectedDstId = null;
+
+        // Initialize Canvas Size
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+            drawGraph();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // Fetch Node Data
+        async function loadData() {
+            try {
+                // Fetch nodes
+                const res = await fetch('/api/nodes');
+                nodes = await res.json();
+                
+                // Build a background sparse mesh representation of edges for drawing
+                connections = [];
+                const nodeIds = Object.keys(nodes);
+                // Draw a spanning tree or some edges so it looks connected
+                for (let i = 0; i < nodeIds.length; i++) {
+                    // Connect to 2 next neighbors
+                    const nid = nodeIds[i];
+                    for (let j = 1; j <= 2; j++) {
+                        const targetId = nodeIds[(i + j) % nodeIds.length];
+                        connections.push({ from: nid, to: targetId });
+                    }
+                }
+
+                setupAutocomplete(srcInput, srcSug, (id, label) => {
+                    selectedSrcId = id;
+                    srcInput.value = `[${id}] ${label}`;
+                });
+
+                setupAutocomplete(dstInput, dstSug, (id, label) => {
+                    selectedDstId = id;
+                    dstInput.value = `[${id}] ${label}`;
+                });
+
+                // Set up initial view values
+                centerGraph();
+                loadHistory();
+
+            } catch (err) {
+                console.error("Error loading graph data: ", err);
+            }
+        }
+
+        // Auto-Center Graph
+        function centerGraph() {
+            if (Object.keys(nodes).length === 0) return;
+            let minX = Infinity, maxX = -Infinity;
+            let minY = Infinity, maxY = -Infinity;
+
+            Object.values(nodes).forEach(n => {
+                if (n.x < minX) minX = n.x;
+                if (n.x > maxX) maxX = n.x;
+                if (n.y < minY) minY = n.y;
+                if (n.y > maxY) maxY = n.y;
+            });
+
+            const graphW = maxX - minX;
+            const graphH = maxY - minY;
+            const canvasW = canvas.width;
+            const canvasH = canvas.height;
+
+            zoom = Math.min((canvasW - 80) / graphW, (canvasH - 80) / graphH);
+            offsetX = (canvasW - graphW * zoom) / 2 - minX * zoom;
+            offsetY = (canvasH - graphH * zoom) / 2 - minY * zoom;
+            drawGraph();
+        }
+
+        // Draw Graph
+        function drawGraph() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Fetch dynamic theme colors from computed CSS variables
+            const styles = getComputedStyle(document.body);
+            const edgeColor = styles.getPropertyValue('--edge-color').trim();
+            const nodeColor = styles.getPropertyValue('--node-color').trim();
+            const pathColor = styles.getPropertyValue('--path-color').trim();
+            const shadowColor = styles.getPropertyValue('--shadow-color').trim();
+
+            // 1. Draw Network Connections (Background edges)
+            ctx.strokeStyle = edgeColor;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            connections.forEach(conn => {
+                const n1 = nodes[conn.from];
+                const n2 = nodes[conn.to];
+                if (n1 && n2) {
+                    ctx.moveTo(n1.x * zoom + offsetX, n1.y * zoom + offsetY);
+                    ctx.lineTo(n2.x * zoom + offsetX, n2.y * zoom + offsetY);
+                }
+            });
+            ctx.stroke();
+
+            // 2. Draw Solved Path (Highlighted)
+            if (activePath && activePath.length > 1) {
+                ctx.strokeStyle = pathColor;
+                ctx.lineWidth = 5;
+                ctx.shadowColor = shadowColor;
+                ctx.shadowBlur = 15;
+                ctx.beginPath();
+                
+                const startNode = nodes[activePath[0]];
+                if (startNode) {
+                    ctx.moveTo(startNode.x * zoom + offsetX, startNode.y * zoom + offsetY);
+                    for (let i = 1; i < activePath.length; i++) {
+                        const nextNode = nodes[activePath[i]];
+                        if (nextNode) {
+                            ctx.lineTo(nextNode.x * zoom + offsetX, nextNode.y * zoom + offsetY);
+                        }
+                    }
+                }
+                ctx.stroke();
+                
+                // Reset shadow
+                ctx.shadowBlur = 0;
+            }
+
+            // 3. Draw Nodes
+            Object.entries(nodes).forEach(([id, n]) => {
+                const cx = n.x * zoom + offsetX;
+                const cy = n.y * zoom + offsetY;
+
+                // Check if part of solved path
+                const isPathNode = activePath.includes(parseInt(id));
+                const isSource = selectedSrcId == parseInt(id);
+                const isDest = selectedDstId == parseInt(id);
+
+                if (isSource) {
+                    ctx.fillStyle = "#e53e3e"; // Red
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = "#e53e3e";
+                } else if (isDest) {
+                    ctx.fillStyle = "#38a169"; // Green
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = "#38a169";
+                } else if (isPathNode) {
+                    ctx.fillStyle = "#00b5d8"; // Cyan
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = nodeColor;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, 3.5, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                ctx.shadowBlur = 0; // Reset
+            });
+        }
+
+        // Setup Autocomplete Search
+        function setupAutocomplete(inputEl, suggestionsEl, onSelect) {
+            inputEl.addEventListener("input", () => {
+                const query = inputEl.value.trim().toLowerCase();
+                suggestionsEl.innerHTML = "";
+                if (!query) {
+                    suggestionsEl.style.display = "none";
+                    return;
+                }
+
+                const matches = [];
+                Object.entries(nodes).forEach(([id, n]) => {
+                    const label = n.label.toLowerCase();
+                    const city = n.city.toLowerCase();
+                    if (id.includes(query) || label.includes(query) || city.includes(query)) {
+                        matches.push({ id, label: n.label, city: n.city });
+                    }
+                });
+
+                if (matches.length > 0) {
+                    suggestionsEl.style.display = "block";
+                    matches.slice(0, 10).forEach(m => {
+                        const item = document.createElement("div");
+                        item.className = "suggestion-item";
+                        item.innerText = `[ID ${m.id}] ${m.label} (${m.city})`;
+                        item.addEventListener("click", () => {
+                            onSelect(parseInt(m.id), m.label);
+                            suggestionsEl.innerHTML = "";
+                            suggestionsEl.style.display = "none";
+                            drawGraph();
+                        });
+                        suggestionsEl.appendChild(item);
+                    });
+                } else {
+                    suggestionsEl.style.display = "none";
+                }
+            });
+
+            // Hide suggestions on outer click
+            document.addEventListener("click", (e) => {
+                if (e.target !== inputEl) {
+                    suggestionsEl.style.display = "none";
+                }
+            });
+        }
+
+        // Fetch Path solver
+        async function solvePath() {
+            if (!selectedSrcId || !selectedDstId) {
+                alert("Please select both a valid Source and Destination node.");
+                return;
+            }
+
+            solveBtn.innerText = "Computing Paths...";
+            solveBtn.disabled = true;
+
+            try {
+                const res = await fetch(`/api/solve?src=${selectedSrcId}&dst=${selectedDstId}`);
+                const data = await res.json();
+
+                if (data.status === "error") {
+                    alert(data.message);
+                    return;
+                }
+
+                // Update metrics
+                document.getElementById("cost-val").innerText = data.cost.toFixed(2);
+                document.getElementById("hops-val").innerText = data.path.length;
+                document.getElementById("seq-val").innerText = `${data.seq_time_ms.toFixed(3)} ms`;
+                document.getElementById("par-val").innerText = `${data.par_time_ms.toFixed(3)} ms`;
+                
+                const speedup = data.seq_time_ms / data.par_time_ms;
+                const speedupEl = document.getElementById("speedup-val");
+                speedupEl.innerText = `${speedup.toFixed(2)}x`;
+                
+                if (speedup >= 1) {
+                    speedupEl.className = "metric-val green";
+                } else {
+                    speedupEl.className = "metric-val";
+                    speedupEl.style.color = "#e53e3e"; // Red for slower
+                }
+
+                // Update Active Path & Redraw
+                activePath = data.path;
+                drawGraph();
+                loadHistory();
+
+            } catch (err) {
+                alert("Failed to connect to solving server.");
+                console.error(err);
+            } finally {
+                solveBtn.innerText = "Compute Shortest Path";
+                solveBtn.disabled = false;
+            }
+        }
+
+        // Fetch History query audits
+        async function loadHistory() {
+            try {
+                const res = await fetch('/api/history');
+                const history = await res.json();
+                const tbody = document.getElementById("history-rows");
+                tbody.innerHTML = "";
+
+                history.forEach(row => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>${row.source_node}</td>
+                        <td>${row.dest_node}</td>
+                        <td>${row.total_cost ? row.total_cost.toFixed(2) : '-'}</td>
+                        <td><span class="status-badge">${row.algorithm}</span></td>
+                        <td>${row.exec_time_ms.toFixed(3)} ms</td>
+                        <td>${row.computed_at}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                console.error("Error loading query history: ", err);
+            }
+        }
+
+        // Drag & Pan logic
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startDragX = e.clientX - offsetX;
+            startDragY = e.clientY - offsetY;
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging) {
+                offsetX = e.clientX - startDragX;
+                offsetY = e.clientY - startDragY;
+                drawGraph();
+            }
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+
+        // Zoom Controls
+        document.getElementById("zoom-in").addEventListener("click", () => {
+            zoom *= 1.2;
+            drawGraph();
+        });
+
+        document.getElementById("zoom-out").addEventListener("click", () => {
+            zoom /= 1.2;
+            drawGraph();
+        });
+
+        document.getElementById("reset-map").addEventListener("click", centerGraph);
+        solveBtn.addEventListener("click", solvePath);
+
+        // Theme Switcher Logic
+        themeSelect.addEventListener("change", (e) => {
+            document.body.className = `theme-${e.target.value}`;
+            drawGraph();
+        });
+
+        // Start App
+        resizeCanvas();
+        loadData();
+    </script>
+</body>
+</html>
